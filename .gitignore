@@ -1,4 +1,4 @@
-.idea/
-./test-data
-./shapenet-car
-./data-generated
+/idea/
+/test-data/
+/shapenet-car/
+/data-generated/
