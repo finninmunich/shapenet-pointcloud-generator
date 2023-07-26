@@ -1,47 +1,37 @@
-# A simple script that uses blender to render views of a single object by rotation the camera around it.
-# Also produces depth map at the same time.
+# The MIT License (MIT)
 #
-# Tested with Blender 2.9
+# Copyright (c) 2016 Panmari
+# Copyright (c) 2020 Markus Völk
 #
-# Example:
-# blender --background --python mytest.py -- --views 10 /path/to/my.obj
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
 #
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
 
 import argparse, sys, os, math, re
 import bpy
 import math
 
 
-import OpenEXR
-import Imath
+
 import argparse
-import array
 import numpy as np
 import os
-import open3d as o3d
-import cv2
+import glob
 
-
-def read_exr(exr_path, height, width):
-    file = OpenEXR.InputFile(exr_path)
-    depth_arr = array.array('f', file.channel('R', Imath.PixelType(Imath.PixelType.FLOAT)))
-    depth = np.array(depth_arr).reshape((height, width))
-    depth[depth < 0] = 0
-    depth[depth > 5] = 0
-    # pring the unique value of depth
-    return depth
-
-
-def depth2pcd(depth, intrinsics, pose):
-    inv_K = np.linalg.inv(intrinsics)
-    inv_K[2, 2] = -1
-    depth = np.flipud(depth)
-    y, x = np.where(depth > 0)
-    # image coordinates -> camera coordinates
-    points = np.dot(inv_K, np.stack([x, y, np.ones_like(x)] * depth[y, x], 0))
-    # camera coordinates -> object coordinates
-    points = np.dot(pose, np.concatenate([points, np.ones((1, points.shape[1]))], 0)).T[:, :3]
-    return points
 
 
 parser = argparse.ArgumentParser(description='Renders given obj file by rotation a camera around it.')
@@ -159,8 +149,6 @@ for instance_path in instance_paths:
     # Possibly disable specular shading:
     light.specular_factor = 1.0
     light.energy = 10.0
-    # Set objekt IDs
-    obj.pass_index = 1
     # Add another light source so stuff facing away from light is not completely dark
     bpy.ops.object.light_add(type='SUN')
     light2 = bpy.data.lights['Sun']
@@ -217,6 +205,7 @@ for instance_path in instance_paths:
             np.save(os.path.join(pose_dir, "intrinsics.npy"), intrinsics)
         scene.render.filepath = os.path.join(color_dir, "rendered_color") + f'_r_{int(i * stepsize)}'
         depth_file_output.file_slots[0].path = os.path.join(depth_dir, "rendered_depth") + f'_r_{int(i * stepsize)}'
+
         bpy.context.scene.view_layers['View Layer'].update()
         camera_matrix_world = cam.matrix_world
         obj_matrix_world_inv = obj.matrix_world.inverted()
@@ -224,28 +213,16 @@ for instance_path in instance_paths:
         cam_pose_obj_coord_sys = np.dot(obj_matrix_world_inv, camera_matrix_world)
         np.save(os.path.join(pose_dir, f"pose_r_{int(i * stepsize)}.npy"), cam_pose_obj_coord_sys)
         bpy.ops.render.render(write_still=True)  # render still
-        # generating partial pointcloud
-        width = args.resolution
-        height = args.resolution
-        exr_path = os.path.join(depth_dir, "rendered_depth") + f'_r_{int(i * stepsize)}' + ".exr"
-        pose_path = os.path.join(pose_dir, f"pose_r_{int(i * stepsize)}.npy")
-
-        depth = read_exr(exr_path, height, width)
-        pose = np.load(pose_path)
-        points = depth2pcd(depth, intrinsics, pose)
-        pcd = o3d.geometry.PointCloud()
-        pcd.points = o3d.utility.Vector3dVector(points)
-        o3d.io.write_point_cloud(os.path.join(pcd_dir, 'test.ply'), pcd)
-        # 归一化深度图到 0-255
-        depth_norm = cv2.normalize(depth, None, 255, 0, cv2.NORM_MINMAX, cv2.CV_8U)
-
-        # 保存深度图
-        cv2.imwrite(os.path.join(depth_dir, f'rendered_depth_r_{int(i*stepsize)}.png'), depth_norm)
-
-        # load ply file using open3d
-        full_pcd = o3d.io.read_point_cloud(os.path.join(pcd_dir, f'partial_r_{int(i*stepsize)}.ply'))
 
         cam_empty.rotation_euler[2] += math.radians(stepsize)
 
-# For debugging the workflow
-# bpy.ops.wm.save_as_mainfile(filepath='debug.blend')
+    # the saved file name of depth file will have 0001 in the end, currently don't know how to fix it, so we just rename it
+    pattern = "rendered_depth_r_*0001.exr"
+
+    # get a list of files in the directory matching the pattern
+    files = glob.glob(os.path.join(depth_dir, pattern))
+
+    # loop through the files and rename them
+    for file in files:
+        new_name = file.replace("0001", "")
+        os.rename(file, new_name)
