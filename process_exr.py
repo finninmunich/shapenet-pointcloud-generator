@@ -71,7 +71,7 @@ def pointcloud_generation(instance_dir):
         o3d.io.write_point_cloud(os.path.join(instance_dir, "rendered", "pointclouds",
                                               f"partial_r_" + depth_dir.split(".")[0].split("_")[-1] + ".ply"), pcd)
         depth_norm = cv2.normalize(depth, None, 255, 0, cv2.NORM_MINMAX, cv2.CV_8U)
-        cv2.imwrite(os.path.join(depth_dir, depth_dir.split('.')[0] + '.png'), depth_norm)
+        cv2.imwrite(os.path.join(depth_path, depth_dir.split('.')[0] + '.png'), depth_norm)
 
 
 def pointclouds_generation(args):
