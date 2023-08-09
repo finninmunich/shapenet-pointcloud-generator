@@ -82,7 +82,7 @@ def pointclouds_generation(args):
     # create a new file name "data_generated" in the same directory
 
 
-    _ = Parallel(n_jobs=len(instance_dirs))(
+    _ = Parallel(n_jobs=-1)(
         delayed(pointcloud_generation)(instance_dir) for instance_dir in instance_dirs)
 
 

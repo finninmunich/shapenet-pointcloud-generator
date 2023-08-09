@@ -108,14 +108,17 @@ instance_paths = [os.path.join(args.shapenet_path, obj_instance_dir, "models", "
 for instance_path in instance_paths:
     #print(instance_path)
     # # Delete default cube
-    context.active_object.select_set(True)
-    bpy.ops.object.delete()
+    # context.active_object.select_set(True)
+    # bpy.ops.object.delete()
 
     # # Delete everything in the scene
     # bpy.ops.object.select_all(action='DESELECT')
     # bpy.ops.object.select_all(action='SELECT')
     # bpy.ops.object.delete()
-
+    for obj in bpy.context.scene.objects:
+        if obj.type == 'MESH':  # You may modify this condition if you want to delete other types of objects as well
+            obj.select_set(True)  # Select object
+    bpy.ops.object.delete()  # Delete all selected objects
     # Import textured mesh
     bpy.ops.object.select_all(action='DESELECT')
 
