@@ -32,13 +32,14 @@ def sample_points(args):
     # create a new file name "data_generated" in the same directory
     if not os.path.exists(args.output_path):
         os.makedirs(args.output_path)
-
+    # sort the obj_instance_dirs to 0,1,2,3,4,5,...
+    obj_instance_dirs = sorted(obj_instance_dirs, key=lambda x: int(x))
     obj_instance_dirs = obj_instance_dirs[:min(200, len(obj_instance_dirs))]  # Keep 200 first
 
     instance_paths = [os.path.join(args.shapenet_path, obj_instance_dir, "models", "model_normalized.obj")
                       for obj_instance_dir in obj_instance_dirs]
 
-    _ = Parallel(n_jobs=len(instance_paths)) \
+    _ = Parallel(n_jobs=-1) \
         (delayed(sample_instance)(*input_args) for input_args in
          zip([args.output_path] * len(instance_paths), instance_paths, [args.virtualscan] * len(instance_paths)))
 

@@ -76,10 +76,11 @@ def pointcloud_generation(instance_dir):
 
 def pointclouds_generation(args):
     instance_dirs = sorted(list(os.listdir(args.rendered_path)))
+    instance_dirs = sorted(instance_dirs, key=lambda x: int(x))
+    instance_dirs = instance_dirs[:min(200, len(instance_dirs))]  # Keep 200 first
     instance_dirs = [os.path.join(args.rendered_path, instance_dir) for instance_dir in instance_dirs]
     # create a new file name "data_generated" in the same directory
 
-    instance_dirs = instance_dirs[:min(2, len(instance_dirs))]  # Keep 200 first
 
     _ = Parallel(n_jobs=len(instance_dirs))(
         delayed(pointcloud_generation)(instance_dir) for instance_dir in instance_dirs)

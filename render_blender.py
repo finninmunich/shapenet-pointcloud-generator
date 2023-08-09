@@ -100,13 +100,13 @@ obj_instance_dirs = sorted(list(os.listdir(args.shapenet_path)))
 # create a new file name "data_generated" in the same directory
 if not os.path.exists(args.output_folder):
     os.makedirs(args.output_folder)
-
-obj_instance_dirs = obj_instance_dirs[:min(2, len(obj_instance_dirs))]  # Keep 200 first
+obj_instance_dirs = sorted(obj_instance_dirs, key=lambda x: int(x))
+obj_instance_dirs = obj_instance_dirs[:min(200, len(obj_instance_dirs))]  # Keep 200 first
 
 instance_paths = [os.path.join(args.shapenet_path, obj_instance_dir, "models", "model_normalized.obj")
                   for obj_instance_dir in obj_instance_dirs]
 for instance_path in instance_paths:
-    print(instance_path)
+    #print(instance_path)
     # # Delete default cube
     context.active_object.select_set(True)
     bpy.ops.object.delete()
