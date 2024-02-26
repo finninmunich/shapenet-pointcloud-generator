@@ -1,6 +1,8 @@
 # shapnet-pointcloud-generator
 This repository is for generating complete pointclouds, partial pointclouds, rendered depth maps and rendered rgb images from ShapeNet.
 
+Most codes come from [stanford-shapenet-renderer]{https://github.com/panmari/stanford-shapenet-renderer}
+
 To run these scripts, you need to have blender in your system.
 
 I haven't organized these codes properly, these codes are just for reference only.
